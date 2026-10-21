@@ -1,13 +1,13 @@
-# Installation and the tested Kwrt case
+# Installation and package selection
 
 ## Decide from the actual package manager
 
 On the router, inspect `uname -m`, `/etc/openwrt_release`, `opkg list-installed`, `apk info`, the installed-package database, and `df -h /overlay`. Also check whether OpenClash already runs and whether `127.0.0.1:25500` is occupied. Presence of `/usr/bin/apk` alone is insufficient: the tested Kwrt firmware still marked `opkg` as Essential and had no initialized APK database.
 
 - **APK-managed firmware:** fetch the official OpenWrt APK matching the architecture, verify the release checksum, and follow the [upstream native deployment guide](https://github.com/Aethersailor/SubConverter-Extended/wiki/Native-Deployment). Check current release names and dependencies first.
-- **opkg-managed firmware:** use a compatible IPK. Do not run `apk add --initdb` against the live root just to make the upstream APK install: that creates a second package database unaware of opkg ownership. `luci-app-run` is an upload/install interface, not a remedy for this mismatch.
+- **opkg-managed firmware:** prefer the matching official IPK from the release assets. Official v1.10.4 includes an `openwrt-x86_64.ipk`; a locally repacked v1.9.7 installation was successfully upgraded to it on 2026-10-21. Read [official-ipk-upgrade.md](official-ipk-upgrade.md) for preserving configuration, checking the listener, and handling the tested Kwrt translation dependency difference. Do not run `apk add --initdb` against the live root just to make an APK install: that creates a second package database unaware of opkg ownership. `luci-app-run` is an upload/install interface, not a remedy for this mismatch.
 
-## Verified case: Kwrt x86_64, 2026-09-25
+## Historical fallback: Kwrt x86_64, 2026-09-25
 
 This router used `opkg`, despite a Kwrt 25.12 label. The installed version was SubConverter-Extended **v1.9.7-75d118d**, packaged as a local `1.9.7-r0kwrt1` IPK. The upstream `SubConverter-Extended-v1.9.7-openwrt-x86_64.apk` SHA-256 was `bc009fbd1a94b75a35b8f9693a05ebe5378de6ab5e0fa4a516c2c64bf2af970d`. This hash applies only to that exact release asset. A previously built IPK must not be assumed compatible with other firmware or architectures.
 
@@ -19,7 +19,7 @@ The successful sequence was:
 4. Install the resulting IPK with `opkg install <file.ipk>` or the IPK upload path in [luci-app-run](https://github.com/wukongdaily/luci-app-run). The tested router used luci-app-run. Do not feed this IPK to `apk`.
 5. Enable/start `/etc/init.d/subconverter-extended` and verify `wget -qO- http://127.0.0.1:25500/healthz` prints `ok`. Check that OpenClash still runs. The LuCI service page is under **Services → SubConverter-Extended**.
 
-The repack omitted the upstream APK updater because it would try to manage an opkg-installed service through APK. Upgrade this installation with a newly reviewed IPK, not the omitted updater. The IPK carries an upstream-derived payload plus local packaging changes; it is not an official upstream IPK.
+The repack omitted the upstream APK updater because it would try to manage an opkg-installed service through APK. A matching official IPK is now the preferred upgrade path; the old repack builder remains pinned to v1.9.7 and must not be used for v1.10.4. The historical IPK carries an upstream-derived payload plus local packaging changes; it is not an official upstream IPK.
 
 ## Local default template used in this case
 
